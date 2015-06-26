@@ -41,16 +41,19 @@ module Fluent
     end
 
     def run
+      prepared_con = get_connection()
       begin
-        poll
+        poll(prepared_con)
       rescue StandardError => e
         $log.error "mysql_replicator: failed to execute query."
         $log.error "error: #{e.message}"
         $log.error e.backtrace.join("\n")
+      ensure
+        prepared_con.close
       end
     end
 
-    def poll
+    def poll(prepared_con)
       table_hash = Hash.new
       ids = Array.new
       loop do
@@ -58,7 +61,6 @@ module Fluent
         start_time = Time.now
         previous_ids = ids
         current_ids = Array.new
-        prepared_con = get_connection()
         if !@prepared_query.nil?
           @prepared_query.split(/;/).each do |query|
             prepared_con.query(query)
