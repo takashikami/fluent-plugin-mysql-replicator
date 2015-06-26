@@ -64,7 +64,7 @@ module Fluent
             prepared_con.query(query)
           end
         end
-        query(@query).each do |row|
+        query(@query, prepared_con).each do |row|
           current_ids << row[@primary_key]
           current_hash = Digest::SHA1.hexdigest(row.flatten.join)
           row.each {|k, v| row[k] = v.to_s if v.is_a?(Time) || v.is_a?(Date) || v.is_a?(BigDecimal)}
@@ -126,10 +126,9 @@ module Fluent
       Engine.emit(tag, Engine.now, record)
     end
 
-    def query(query, con = nil)
+    def query(query, con)
       begin
-        mysql = get_connection if con.nil?
-        return mysql.query(query)
+        return con.query(query)
       rescue Exception => e
         $log.warn "mysql_replicator: #{e}"
         sleep @interval
